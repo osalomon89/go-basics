@@ -3,6 +3,8 @@ module github.com/osalomon89/go-basics
 go 1.22.1
 
 require (
+	github.com/go-sql-driver/mysql v1.7.1
+	github.com/jmoiron/sqlx v1.3.5
 	github.com/melisource/fury_go-core v1.11.2
 	github.com/melisource/fury_go-platform v1.11.2
 )

@@ -1,13 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net/http"
 
-	"github.com/melisource/fury_go-core/pkg/web"
 	"github.com/melisource/fury_go-platform/pkg/fury"
-	"github.com/osalomon89/go-basics/core/domain"
+	"github.com/osalomon89/go-basics/internal/handler"
+	"github.com/osalomon89/go-basics/internal/repository"
+	"github.com/osalomon89/go-basics/internal/service"
 )
 
 func main() {
@@ -22,32 +21,15 @@ func run() error {
 		return err
 	}
 
-	app.Get("/hello", helloHandler)
-	app.Post("/items", createItemHandler)
+	repo := repository.NewRepository()
+	service := service.NewService(repo)
+	h := handler.NewHandler(service)
+
+	app.Get("/hello", h.HelloHandler)
+	app.Get("/items", h.ReadItem)
+	app.Post("/items", h.CreateItem)
+	app.Get("/items/:id", h.ReadItemId)
+	app.Put("/items/:id", h.UpdateItem)
 
 	return app.Run()
-}
-
-func helloHandler(w http.ResponseWriter, r *http.Request) error {
-	return web.EncodeJSON(w, fmt.Sprintf("%s, world!", r.URL.Path[1:]), http.StatusOK)
-}
-
-type responseError struct {
-	Message    string
-	StatusCode int
-}
-
-func createItemHandler(w http.ResponseWriter, r *http.Request) error {
-	log.Println("Entering ItemHandler: newItemHandler()")
-
-	var newItem domain.Item
-
-	if err := web.DecodeJSON(r, &newItem); err != nil {
-		log.Printf("Failed to decode JSON: %v", err)
-		return web.EncodeJSON(w, responseError{Message: "error decoding json body", StatusCode: http.StatusBadRequest}, http.StatusBadRequest)
-	}
-
-	log.Println("item created: ", newItem.Name)
-
-	return web.EncodeJSON(w, newItem, http.StatusOK)
 }
