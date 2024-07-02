@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/osalomon89/go-basics/internal/core/domain"
@@ -41,14 +42,20 @@ func (s itemRepositoryImpl) GetAllItems() []domain.Item {
 	return items
 }
 
-func (s itemRepositoryImpl) AddItem(item domain.Item) []domain.Item {
-	if item.Title == "" {
-		return nil
+func (s itemRepositoryImpl) AddItem(item domain.Item) (*domain.Item, error) {
+	for _, i := range items {
+		if i.Code == item.Code {
+			return nil, fmt.Errorf("duplicated entry")
+		}
 	}
+
+	item.ID = len(items) + 1
+	item.CreatedAt = time.Now()
+	item.UpdatedAt = item.CreatedAt
 
 	items = append(items, item)
 
-	return items
+	return &item, nil
 }
 
 func (s itemRepositoryImpl) ReadItem(id int) *domain.Item {

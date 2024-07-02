@@ -4,9 +4,9 @@ import (
 	"log"
 
 	"github.com/melisource/fury_go-platform/pkg/fury"
+	"github.com/osalomon89/go-basics/internal/core/service"
 	"github.com/osalomon89/go-basics/internal/handler"
 	"github.com/osalomon89/go-basics/internal/repository"
-	"github.com/osalomon89/go-basics/internal/service"
 )
 
 func main() {

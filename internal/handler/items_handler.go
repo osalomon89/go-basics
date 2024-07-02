@@ -34,9 +34,13 @@ func (h *handler) CreateItem(w http.ResponseWriter, r *http.Request) error {
 		return web.EncodeJSON(w, responseError{Message: "error decoding json body", StatusCode: http.StatusBadRequest}, http.StatusBadRequest)
 	}
 
-	items := h.itemService.AddItem(newItem)
+	item, err := h.itemService.AddItem(newItem)
+	if err != nil {
+		log.Printf("error inserting item: %v", err)
+		return web.EncodeJSON(w, responseError{Message: "error inserting item", StatusCode: http.StatusInternalServerError}, http.StatusInternalServerError)
+	}
 
-	return web.EncodeJSON(w, items, http.StatusCreated)
+	return web.EncodeJSON(w, item, http.StatusCreated)
 }
 
 func (h *handler) ReadItemId(w http.ResponseWriter, r *http.Request) error {
