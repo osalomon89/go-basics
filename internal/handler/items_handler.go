@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/melisource/fury_go-core/pkg/web"
 	"github.com/osalomon89/go-basics/internal/core/domain"
@@ -34,7 +33,7 @@ func (h *handler) CreateItem(w http.ResponseWriter, r *http.Request) error {
 		return web.EncodeJSON(w, responseError{Message: "error decoding json body", StatusCode: http.StatusBadRequest}, http.StatusBadRequest)
 	}
 
-	item, err := h.itemService.AddItem(newItem)
+	item, err := h.itemService.AddItem(r.Context(), newItem)
 	if err != nil {
 		log.Printf("error inserting item: %v", err)
 		return web.EncodeJSON(w, responseError{Message: "error inserting item", StatusCode: http.StatusInternalServerError}, http.StatusInternalServerError)
@@ -45,12 +44,12 @@ func (h *handler) CreateItem(w http.ResponseWriter, r *http.Request) error {
 
 func (h *handler) ReadItemId(w http.ResponseWriter, r *http.Request) error {
 	id := web.Param(r, "id")
-	convertId, err := strconv.Atoi(id)
-	if err != nil {
-		return web.EncodeJSON(w, responseError{Message: "error in param", StatusCode: http.StatusBadRequest}, http.StatusBadRequest)
-	}
+	// convertId, err := strconv.Atoi(id)
+	// if err != nil {
+	// 	return web.EncodeJSON(w, responseError{Message: "error in param", StatusCode: http.StatusBadRequest}, http.StatusBadRequest)
+	// }
 
-	item := h.itemService.ReadItem(convertId)
+	item := h.itemService.ReadItem(r.Context(), id)
 	if item != nil {
 		return web.EncodeJSON(w, item, http.StatusOK)
 	}
@@ -71,12 +70,16 @@ func (h *handler) UpdateItem(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	id := web.Param(r, "id")
-	convertId, err := strconv.Atoi(id)
-	if err != nil {
-		return web.EncodeJSON(w, responseError{Message: "error in param", StatusCode: http.StatusBadRequest}, http.StatusBadRequest)
-	}
+	existItem.ID = id
 
-	result := h.itemService.UpdateItem(convertId, existItem)
+	// convertId, err := strconv.Atoi(id)
+	// if err != nil {
+	// 	return web.EncodeJSON(w, responseError{Message: "error in param", StatusCode: http.StatusBadRequest}, http.StatusBadRequest)
+	// }
+
+	// existItem.ID = convertId
+
+	result := h.itemService.UpdateItem(r.Context(), existItem)
 
 	if result != nil {
 		return web.EncodeJSON(w, result, http.StatusOK)

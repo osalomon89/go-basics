@@ -3,10 +3,11 @@ package main
 import (
 	"log"
 
+	es8 "github.com/elastic/go-elasticsearch/v8"
 	"github.com/melisource/fury_go-platform/pkg/fury"
 	"github.com/osalomon89/go-basics/internal/core/service"
 	"github.com/osalomon89/go-basics/internal/handler"
-	"github.com/osalomon89/go-basics/internal/repository"
+	repository "github.com/osalomon89/go-basics/internal/repository/ds"
 )
 
 func main() {
@@ -21,7 +22,16 @@ func run() error {
 		return err
 	}
 
-	repo := repository.NewRepository()
+	esCient, err := es8.NewDefaultClient()
+	if err != nil {
+		return err
+	}
+
+	repo := repository.NewEsRepository(esCient)
+	if err := repo.CreateIndex("items"); err != nil {
+		log.Fatalln(err)
+	}
+
 	service := service.NewService(repo)
 	h := handler.NewHandler(service)
 
