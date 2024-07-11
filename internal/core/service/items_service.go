@@ -12,14 +12,14 @@ type itemServiceImpl struct {
 	repo ports.ItemRepository
 }
 
-func NewService(repo ports.ItemRepository) ports.ItemService {
+func NewService(repo ports.ItemRepository) itemServiceImpl {
 	return itemServiceImpl{
 		repo: repo,
 	}
 }
 
-func (s itemServiceImpl) GetAllItems() []domain.Item {
-	return s.repo.GetAllItems()
+func (s itemServiceImpl) GetAllItems(ctx context.Context, limit int, cursor []interface{}) ([]domain.Item, []interface{}, error) {
+	return s.repo.GetAllItems(ctx, limit, cursor)
 }
 
 func (s itemServiceImpl) AddItem(ctx context.Context, item domain.Item) (*domain.Item, error) {

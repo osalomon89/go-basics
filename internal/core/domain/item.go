@@ -3,7 +3,7 @@ package domain
 import "time"
 
 type Item struct {
-	ID          string     `json:"id"`
+	ID          string     `json:"id,omitempty"`
 	Code        string     `json:"code"`
 	Title       string     `json:"title"`
 	Description string     `json:"description"`

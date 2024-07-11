@@ -24,11 +24,70 @@ func NewEsRepository(client *es8.Client) *elasticSearch {
 	}
 }
 
-func (r *elasticSearch) GetAllItems() []domain.Item {
-	return nil
+func (r *elasticSearch) GetAllItems(ctx context.Context, limit int, searchAfter []interface{}) ([]domain.Item, []interface{}, error) {
+	query := map[string]interface{}{
+		"size": limit,
+		"sort": []map[string]string{
+			{"created_at": "asc"},
+		},
+		"query": map[string]interface{}{
+			"match_all": map[string]interface{}{},
+		},
+	}
+
+	if searchAfter != nil {
+		query["search_after"] = searchAfter
+	}
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(query); err != nil {
+		return nil, nil, fmt.Errorf("error encoding query: %s", err)
+	}
+
+	req := esapi.SearchRequest{
+		Index: []string{r.index},
+		Body:  &buf,
+	}
+
+	res, err := req.Do(ctx, r.client)
+	if err != nil {
+		return nil, nil, fmt.Errorf("search request: %w", err)
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		return nil, nil, fmt.Errorf("error response: %s", res.String())
+	}
+
+	var result struct {
+		Hits struct {
+			Hits []struct {
+				ID     string        `json:"_id"`
+				Source domain.Item   `json:"_source"`
+				Sort   []interface{} `json:"sort"`
+			} `json:"hits"`
+		} `json:"hits"`
+	}
+
+	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
+		return nil, nil, fmt.Errorf("error decoding response: %s", err)
+	}
+
+	items := make([]domain.Item, len(result.Hits.Hits))
+	for i, hit := range result.Hits.Hits {
+		hit.Source.ID = hit.ID
+		items[i] = hit.Source
+	}
+
+	if len(result.Hits.Hits) == 0 {
+		return items, nil, nil
+	}
+
+	return items, result.Hits.Hits[len(result.Hits.Hits)-1].Sort, nil
 }
 
 func (r *elasticSearch) AddItem(ctx context.Context, item domain.Item) (*domain.Item, error) {
+	item.ID = ""
 	now := time.Now().UTC()
 	item.CreatedAt = &now
 	item.UpdatedAt = &now
@@ -55,6 +114,17 @@ func (r *elasticSearch) AddItem(ctx context.Context, item domain.Item) (*domain.
 
 	if res.IsError() {
 		return nil, fmt.Errorf("insert: response: %s", res.String())
+	}
+
+	var resBody map[string]interface{}
+	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+		return nil, fmt.Errorf("error parsing the response body: %s", err)
+	}
+
+	if id, ok := resBody["_id"].(string); ok {
+		item.ID = id
+	} else {
+		return nil, fmt.Errorf("error: no _id returned in response")
 	}
 
 	return &item, nil
@@ -122,7 +192,7 @@ func (r *elasticSearch) ReadItem(ctx context.Context, id string) (*domain.Item, 
 
 	res, err := req.Do(ctx, r.client)
 	if err != nil {
-		return nil, fmt.Errorf("find one: request: %w", err)
+		return nil, fmt.Errorf("error getting document: %w", err)
 	}
 	defer res.Body.Close()
 
@@ -143,6 +213,8 @@ func (r *elasticSearch) ReadItem(ctx context.Context, id string) (*domain.Item, 
 	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
 		return nil, fmt.Errorf("find one: decode: %w", err)
 	}
+
+	item.ID = id
 
 	return &item, nil
 }

@@ -5,9 +5,9 @@ import (
 
 	es8 "github.com/elastic/go-elasticsearch/v8"
 	"github.com/melisource/fury_go-platform/pkg/fury"
+	"github.com/osalomon89/go-basics/internal/adapters/handler"
+	repository "github.com/osalomon89/go-basics/internal/adapters/repository/ds"
 	"github.com/osalomon89/go-basics/internal/core/service"
-	"github.com/osalomon89/go-basics/internal/handler"
-	repository "github.com/osalomon89/go-basics/internal/repository/ds"
 )
 
 func main() {
@@ -32,14 +32,16 @@ func run() error {
 		log.Fatalln(err)
 	}
 
+	// repo := mysqlrepo.NewMySQLRepository()
+
 	service := service.NewService(repo)
 	h := handler.NewHandler(service)
 
 	app.Get("/hello", h.HelloHandler)
 	app.Get("/items", h.ReadItem)
 	app.Post("/items", h.CreateItem)
-	app.Get("/items/:id", h.ReadItemId)
-	app.Put("/items/:id", h.UpdateItem)
+	app.Get("/items/{id}", h.ReadItemId)
+	app.Put("/items/{id}", h.UpdateItem)
 
 	return app.Run()
 }

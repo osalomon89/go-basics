@@ -55,7 +55,7 @@ func (e *elasticSearch) createIndexWithMapping(index string) error {
 					"type": "keyword"
 				},
 				"created_at": { 
-				"type": "date" 
+					"type": "date" 
 				},
 				"provider": {
 					"type": "object",

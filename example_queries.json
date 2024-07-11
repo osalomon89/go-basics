@@ -48,6 +48,13 @@ GET /items/_search
   }
 }
 
+POST /items/_delete_by_query
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
 DELETE items
 
 # guardar item con ID nombre_indice/_doc/ID
