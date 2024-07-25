@@ -12,7 +12,7 @@ type itemServiceImpl struct {
 	repo ports.ItemRepository
 }
 
-func NewService(repo ports.ItemRepository) itemServiceImpl {
+func NewService(repo ports.ItemRepository) ports.ItemService {
 	return itemServiceImpl{
 		repo: repo,
 	}

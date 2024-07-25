@@ -33,9 +33,9 @@ func run() error {
 	}
 
 	// repo := mysqlrepo.NewMySQLRepository()
+	service := service.NewService(repo) //itemServiceImpl
 
-	service := service.NewService(repo)
-	h := handler.NewHandler(service)
+	h := handler.NewHandler(service) //ItemService
 
 	app.Get("/hello", h.HelloHandler)
 	app.Get("/items", h.ReadItem)
