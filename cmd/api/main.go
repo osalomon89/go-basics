@@ -3,10 +3,9 @@ package main
 import (
 	"log"
 
-	es8 "github.com/elastic/go-elasticsearch/v8"
 	"github.com/melisource/fury_go-platform/pkg/fury"
 	"github.com/osalomon89/go-basics/internal/adapters/handler"
-	repository "github.com/osalomon89/go-basics/internal/adapters/repository/ds"
+	mysqlrepo "github.com/osalomon89/go-basics/internal/adapters/repository/mysql"
 	"github.com/osalomon89/go-basics/internal/core/service"
 )
 
@@ -22,17 +21,22 @@ func run() error {
 		return err
 	}
 
-	esCient, err := es8.NewDefaultClient()
+	// esCient, err := es8.NewDefaultClient()
+	// if err != nil {
+	// 	return err
+	// }
+
+	// repo := ds.NewEsRepository(esCient)
+	// if err := repo.CreateIndex("items"); err != nil {
+	// 	log.Fatalln(err)
+	// }
+
+	conn, err := mysqlrepo.GetConnectionDB()
 	if err != nil {
 		return err
 	}
 
-	repo := repository.NewEsRepository(esCient)
-	if err := repo.CreateIndex("items"); err != nil {
-		log.Fatalln(err)
-	}
-
-	// repo := mysqlrepo.NewMySQLRepository()
+	repo := mysqlrepo.NewMySQLRepository(conn)
 	service := service.NewService(repo) //itemServiceImpl
 
 	h := handler.NewHandler(service) //ItemService
@@ -42,6 +46,7 @@ func run() error {
 	app.Post("/items", h.CreateItem)
 	app.Get("/items/{id}", h.ReadItemId)
 	app.Put("/items/{id}", h.UpdateItem)
+	//adicionar delete endpoint
 
 	return app.Run()
 }

@@ -3,96 +3,67 @@ package mysqlrepo
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/osalomon89/go-basics/internal/core/domain"
 	"github.com/osalomon89/go-basics/internal/core/ports"
 )
 
-var items = []domain.Item{
-	{
-		ID:          "1",
-		Code:        "Item001",
-		Title:       "Camisa",
-		Description: "camisa de algodão",
-		Price:       79,
-		Stock:       3,
-		CreatedAt:   nil,
-		UpdatedAt:   nil,
-	},
-	{
-		ID:          "2",
-		Code:        "Item002",
-		Title:       "Bola futebol",
-		Description: "bola futebol",
-		Price:       20,
-		Stock:       30,
-		CreatedAt:   nil,
-		UpdatedAt:   nil,
-	},
-}
-
 type itemRepositoryImpl struct {
+	conn *sqlx.DB
 }
 
-func NewMySQLRepository() ports.ItemRepository {
-	return itemRepositoryImpl{}
+func NewMySQLRepository(conn *sqlx.DB) ports.ItemRepository {
+	return &itemRepositoryImpl{
+		conn: conn,
+	}
 }
 
-func (s itemRepositoryImpl) GetAllItems(ctx context.Context, limit int, searchAfter []interface{}) ([]domain.Item, []interface{}, error) {
+func (s *itemRepositoryImpl) GetAllItems(ctx context.Context, limit int, searchAfter []interface{}) ([]domain.Item, []interface{}, error) {
+	var items []domain.Item
+
+	err := s.conn.Select(&items, "SELECT * FROM items LIMIT 10")
+	if err != nil {
+		return items, nil, fmt.Errorf("error getting all items: %w", err)
+	}
+
 	return items, nil, nil
 }
 
-func (s itemRepositoryImpl) AddItem(ctx context.Context, item domain.Item) (*domain.Item, error) {
-	for _, i := range items {
-		if i.Code == item.Code {
-			return nil, fmt.Errorf("duplicated entry")
-		}
+func (s *itemRepositoryImpl) AddItem(ctx context.Context, item domain.Item) (*domain.Item, error) {
+	createdAt := time.Now()
+
+	result, err := s.conn.Exec(`INSERT INTO items 
+		(code, title, description, price, stock, available, created_at, updated_at) 
+		VALUES(?,?,?,?,?,?,?,?)`, item.Code, item.Title, item.Description, item.Price,
+		item.Stock, item.Available, createdAt, createdAt)
+
+	if err != nil {
+		return nil, fmt.Errorf("error inserting item: %w", err)
 	}
 
-	item.ID = string((len(items) + 1))
-	now := time.Now()
-	item.CreatedAt = &now
-	item.UpdatedAt = &now
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, fmt.Errorf("error saving item: %w", err)
+	}
 
-	items = append(items, item)
+	item.ID = strconv.FormatInt(id, 10)
+	item.CreatedAt = &createdAt
+	item.UpdatedAt = &createdAt
 
 	return &item, nil
 }
 
 func (s itemRepositoryImpl) ReadItem(ctx context.Context, id string) (*domain.Item, error) {
-	for _, item := range items {
-		if id == item.ID {
-			return &item, nil
-		}
-	}
-
 	return nil, fmt.Errorf("item not found")
 }
 
 func (s itemRepositoryImpl) Update(ctx context.Context, itemNew domain.Item) (*domain.Item, error) {
-	for i, v := range items {
-		if itemNew.ID == v.ID {
-			itemNew.ID = v.ID
-			itemNew.CreatedAt = v.CreatedAt
-			now := time.Now()
-			itemNew.UpdatedAt = &now
-			items[i] = itemNew
-
-			return &itemNew, nil
-		}
-	}
-
 	return nil, fmt.Errorf("item not found")
 }
 
 func (s itemRepositoryImpl) Delete(ctx context.Context, id string) error {
-	for i, v := range items {
-		if id == v.ID {
-			items = append(items[:i], items[i+1:]...)
-			return nil
-		}
-	}
-
 	return fmt.Errorf("item not found")
 }

@@ -10,8 +10,8 @@ type Item struct {
 	Price       float64    `json:"price"`
 	Stock       int        `json:"stock"`
 	Available   bool       `json:"available"`
-	Categories  []string   `json:"categories"`
+	Categories  string     `json:"categories"`
 	Provider    Provider   `json:"provider"`
-	CreatedAt   *time.Time `json:"created_at,omitempty"`
-	UpdatedAt   *time.Time `json:"updated_at,omitempty"`
+	CreatedAt   *time.Time `json:"created_at,omitempty" db:"created_at"`
+	UpdatedAt   *time.Time `json:"updated_at,omitempty" db:"updated_at"`
 }
