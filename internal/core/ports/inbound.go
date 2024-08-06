@@ -1,10 +1,14 @@
 package ports
 
-import "github.com/osalomon89/go-basics/internal/core/domain"
+import (
+	"context"
+
+	"github.com/osalomon89/go-basics/internal/core/domain"
+)
 
 type ItemService interface {
-	GetAllItems() []domain.Item
-	AddItem(item domain.Item) (*domain.Item, error)
-	ReadItem(id int) *domain.Item
-	UpdateItem(id int, itemNew domain.Item) *domain.Item
+	GetAllItems(ctx context.Context, limit int, cursor []interface{}) ([]domain.Item, []interface{}, error)
+	AddItem(ctx context.Context, item domain.Item) (*domain.Item, error)
+	ReadItem(ctx context.Context, id string) *domain.Item
+	UpdateItem(ctx context.Context, itemNew domain.Item) *domain.Item
 }

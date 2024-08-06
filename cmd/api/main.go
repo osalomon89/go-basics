@@ -4,9 +4,9 @@ import (
 	"log"
 
 	"github.com/melisource/fury_go-platform/pkg/fury"
+	"github.com/osalomon89/go-basics/internal/adapters/handler"
+	mysqlrepo "github.com/osalomon89/go-basics/internal/adapters/repository/mysql"
 	"github.com/osalomon89/go-basics/internal/core/service"
-	"github.com/osalomon89/go-basics/internal/handler"
-	"github.com/osalomon89/go-basics/internal/repository"
 )
 
 func main() {
@@ -21,15 +21,32 @@ func run() error {
 		return err
 	}
 
-	repo := repository.NewRepository()
-	service := service.NewService(repo)
-	h := handler.NewHandler(service)
+	// esCient, err := es8.NewDefaultClient()
+	// if err != nil {
+	// 	return err
+	// }
+
+	// repo := ds.NewEsRepository(esCient)
+	// if err := repo.CreateIndex("items"); err != nil {
+	// 	log.Fatalln(err)
+	// }
+
+	conn, err := mysqlrepo.GetConnectionDB()
+	if err != nil {
+		return err
+	}
+
+	repo := mysqlrepo.NewMySQLRepository(conn)
+	service := service.NewService(repo) //itemServiceImpl
+
+	h := handler.NewHandler(service) //ItemService
 
 	app.Get("/hello", h.HelloHandler)
 	app.Get("/items", h.ReadItem)
 	app.Post("/items", h.CreateItem)
-	app.Get("/items/:id", h.ReadItemId)
-	app.Put("/items/:id", h.UpdateItem)
+	app.Get("/items/{id}", h.ReadItemId)
+	app.Put("/items/{id}", h.UpdateItem)
+	//adicionar delete endpoint
 
 	return app.Run()
 }
