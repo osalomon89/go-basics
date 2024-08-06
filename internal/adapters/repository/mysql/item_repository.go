@@ -32,38 +32,38 @@ func (s *itemRepositoryImpl) GetAllItems(ctx context.Context, limit int, searchA
 	return items, nil, nil
 }
 
-func (s *itemRepositoryImpl) AddItem(ctx context.Context, item domain.Item) (*domain.Item, error) {
+func (s *itemRepositoryImpl) AddItem(ctx context.Context, item *domain.Item) error {
 	createdAt := time.Now()
 
 	result, err := s.conn.Exec(`INSERT INTO items 
-		(code, title, description, price, stock, available, created_at, updated_at) 
-		VALUES(?,?,?,?,?,?,?,?)`, item.Code, item.Title, item.Description, item.Price,
+		(code, title, description, categories, price, stock, available, created_at, updated_at) 
+		VALUES(?,?,?,?,?,?,?,?,?)`, item.Code, item.Title, item.Description, item.Categories, item.Price,
 		item.Stock, item.Available, createdAt, createdAt)
 
 	if err != nil {
-		return nil, fmt.Errorf("error inserting item: %w", err)
+		return fmt.Errorf("error inserting item: %w", err)
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		return nil, fmt.Errorf("error saving item: %w", err)
+		return fmt.Errorf("error saving item: %w", err)
 	}
 
 	item.ID = strconv.FormatInt(id, 10)
 	item.CreatedAt = &createdAt
 	item.UpdatedAt = &createdAt
 
-	return &item, nil
+	return nil
 }
 
-func (s itemRepositoryImpl) ReadItem(ctx context.Context, id string) (*domain.Item, error) {
+func (s *itemRepositoryImpl) ReadItem(ctx context.Context, id string) (*domain.Item, error) {
 	return nil, fmt.Errorf("item not found")
 }
 
-func (s itemRepositoryImpl) Update(ctx context.Context, itemNew domain.Item) (*domain.Item, error) {
+func (s *itemRepositoryImpl) Update(ctx context.Context, itemNew domain.Item) (*domain.Item, error) {
 	return nil, fmt.Errorf("item not found")
 }
 
-func (s itemRepositoryImpl) Delete(ctx context.Context, id string) error {
+func (s *itemRepositoryImpl) Delete(ctx context.Context, id string) error {
 	return fmt.Errorf("item not found")
 }

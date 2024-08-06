@@ -13,16 +13,16 @@ type itemServiceImpl struct {
 }
 
 func NewService(repo ports.ItemRepository) ports.ItemService {
-	return itemServiceImpl{
+	return &itemServiceImpl{
 		repo: repo,
 	}
 }
 
-func (s itemServiceImpl) GetAllItems(ctx context.Context, limit int, cursor []interface{}) ([]domain.Item, []interface{}, error) {
+func (s *itemServiceImpl) GetAllItems(ctx context.Context, limit int, cursor []interface{}) ([]domain.Item, []interface{}, error) {
 	return s.repo.GetAllItems(ctx, limit, cursor)
 }
 
-func (s itemServiceImpl) AddItem(ctx context.Context, item domain.Item) (*domain.Item, error) {
+func (s *itemServiceImpl) AddItem(ctx context.Context, item domain.Item) (*domain.Item, error) {
 	if item.Title == "" {
 		return nil, fmt.Errorf("title cannot be nil")
 	}
@@ -39,21 +39,21 @@ func (s itemServiceImpl) AddItem(ctx context.Context, item domain.Item) (*domain
 		item.Available = true
 	}
 
-	itemNew, err := s.repo.AddItem(ctx, item)
+	err := s.repo.AddItem(ctx, &item)
 	if err != nil {
 		return nil, fmt.Errorf("error in repository: %w", err)
 	}
 
-	return itemNew, nil
+	return &item, nil
 }
 
-func (s itemServiceImpl) ReadItem(ctx context.Context, id string) *domain.Item {
+func (s *itemServiceImpl) ReadItem(ctx context.Context, id string) *domain.Item {
 	item, _ := s.repo.ReadItem(ctx, id)
 
 	return item
 }
 
-func (s itemServiceImpl) UpdateItem(ctx context.Context, itemNew domain.Item) *domain.Item {
+func (s *itemServiceImpl) UpdateItem(ctx context.Context, itemNew domain.Item) *domain.Item {
 	item, _ := s.repo.Update(ctx, itemNew)
 
 	return item

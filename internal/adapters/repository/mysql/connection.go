@@ -62,6 +62,6 @@ func migrate(db *sqlx.DB) error {
 }
 
 func dbConnectionURL() string {
-	return "root:secret@tcp(localhost:3306)/test-db?charset=utf8&parseTime=True"
+	return "root:root@tcp(localhost:3306)/inventory?charset=utf8&parseTime=True"
 	//return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True", DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME)
 }
