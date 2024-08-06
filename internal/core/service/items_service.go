@@ -48,7 +48,10 @@ func (s *itemServiceImpl) AddItem(ctx context.Context, item domain.Item) (*domai
 }
 
 func (s *itemServiceImpl) ReadItem(ctx context.Context, id string) *domain.Item {
-	item, _ := s.repo.ReadItem(ctx, id)
+	item, err := s.repo.ReadItem(ctx, id)
+	if err != nil {
+		return nil
+	}
 
 	return item
 }
