@@ -17,6 +17,8 @@ RUN go mod download && go mod verify
 # Copy the source code.
 COPY . .
 
+WORKDIR /app/cmd/api
+
 # Build
 RUN go build -o /api
 
