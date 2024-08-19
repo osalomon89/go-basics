@@ -13,3 +13,7 @@ type ItemRepository interface {
 	Update(ctx context.Context, itemNew domain.Item) (*domain.Item, error)
 	Delete(ctx context.Context, id string) error
 }
+
+type ProviderClient interface {
+	GetProvider(id int) (domain.Provider, error)
+}

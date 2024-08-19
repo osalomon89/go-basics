@@ -35,7 +35,7 @@ func (s *itemRepositoryImpl) GetAllItems(ctx context.Context, limit int, searchA
 func (s *itemRepositoryImpl) AddItem(ctx context.Context, item *domain.Item) error {
 	createdAt := time.Now()
 
-	result, err := s.conn.Exec(`INSERT INTO items 
+	result, err := s.conn.ExecContext(ctx, `INSERT INTO items 
 		(code, title, description, categories, price, stock, available, created_at, updated_at) 
 		VALUES(?,?,?,?,?,?,?,?,?)`, item.Code, item.Title, item.Description, item.Categories, item.Price,
 		item.Stock, item.Available, createdAt, createdAt)
@@ -57,7 +57,19 @@ func (s *itemRepositoryImpl) AddItem(ctx context.Context, item *domain.Item) err
 }
 
 func (s *itemRepositoryImpl) ReadItem(ctx context.Context, id string) (*domain.Item, error) {
-	return nil, fmt.Errorf("item not found")
+	var item domain.Item
+
+	idSql, err := strconv.Atoi(id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.conn.GetContext(ctx, &item, "SELECT * FROM items WHERE id=?", idSql)
+	if err != nil {
+		return nil, fmt.Errorf("error getting an item: %w", err)
+	}
+
+	return &item, nil
 }
 
 func (s *itemRepositoryImpl) Update(ctx context.Context, itemNew domain.Item) (*domain.Item, error) {

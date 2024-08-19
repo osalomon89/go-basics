@@ -1,21 +1,22 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/melisource/fury_go-core/pkg/web"
+	"github.com/gorilla/mux"
 	"github.com/osalomon89/go-basics/internal/core/domain"
 	"github.com/osalomon89/go-basics/internal/core/ports"
 )
 
-type responseError struct {
-	Message    string
-	StatusCode int
-}
+// type responseError struct {
+// 	Message    string
+// 	StatusCode int
+// }
 
 type handler struct {
 	itemService ports.ItemService
@@ -27,35 +28,48 @@ func NewHandler(itemService ports.ItemService) *handler {
 	}
 }
 
-func (h *handler) CreateItem(w http.ResponseWriter, r *http.Request) error {
+func (h *handler) CreateItem(w http.ResponseWriter, r *http.Request) {
 	var newItem domain.Item
+	ctx := r.Context()
 
-	if err := web.DecodeJSON(r, &newItem); err != nil {
-		log.Printf("Failed to decode JSON: %v", err)
-		return web.EncodeJSON(w, responseError{Message: "error decoding json body", StatusCode: http.StatusBadRequest}, http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&newItem); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	item, err := h.itemService.AddItem(r.Context(), newItem)
+	item, err := h.itemService.AddItem(ctx, newItem)
 	if err != nil {
 		log.Printf("error inserting item: %v", err)
-		return web.EncodeJSON(w, responseError{Message: "error inserting item", StatusCode: http.StatusInternalServerError}, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		//return web.EncodeJSON(w, responseError{Message: "error inserting item", StatusCode: http.StatusInternalServerError}, http.StatusInternalServerError)
 	}
 
-	return web.EncodeJSON(w, item, http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(item); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
-func (h *handler) ReadItemId(w http.ResponseWriter, r *http.Request) error {
-	id := web.Param(r, "id")
+func (h *handler) GetItemByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
 
 	item := h.itemService.ReadItem(r.Context(), id)
 	if item != nil {
-		return web.EncodeJSON(w, item, http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(item); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		return
 	}
 
-	return web.EncodeJSON(w, responseError{Message: "id not found", StatusCode: http.StatusNotFound}, http.StatusNotFound)
+	http.Error(w, "id not found", http.StatusBadRequest)
 }
 
-func (h *handler) ReadItem(w http.ResponseWriter, r *http.Request) error {
+func (h *handler) GetAllItems(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	limitParam := r.URL.Query().Get("limit")
 	cursorParam := r.URL.Query().Get("cursor")
@@ -72,7 +86,8 @@ func (h *handler) ReadItem(w http.ResponseWriter, r *http.Request) error {
 
 	items, newCursor, err := h.itemService.GetAllItems(ctx, limit, searchAfter)
 	if err != nil {
-		return web.EncodeJSON(w, responseError{Message: "error getting items", StatusCode: http.StatusInternalServerError}, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	response := struct {
@@ -86,7 +101,13 @@ func (h *handler) ReadItem(w http.ResponseWriter, r *http.Request) error {
 		response.Cursor = encodeCursor(newCursor)
 	}
 
-	return web.EncodeJSON(w, response, http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+
+	// Retornar la lista de usuarios en formato JSON
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func parseCursor(cursor string) []interface{} {
@@ -116,26 +137,31 @@ func encodeCursor(cursor []interface{}) string {
 	return strings.Join(parts, ",")
 }
 
-func (h *handler) UpdateItem(w http.ResponseWriter, r *http.Request) error {
+func (h *handler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 	var existItem domain.Item
 
-	if err := web.DecodeJSON(r, &existItem); err != nil {
-		log.Printf("Failed to decode JSON: %v", err)
-		return web.EncodeJSON(w, responseError{Message: "error decoding json body", StatusCode: http.StatusBadRequest}, http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&existItem); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	id := web.Param(r, "id")
-	existItem.ID = id
+	vars := mux.Vars(r)
+	existItem.ID = vars["id"]
 
 	result := h.itemService.UpdateItem(r.Context(), existItem)
 
 	if result != nil {
-		return web.EncodeJSON(w, result, http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(result); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		return
 	}
 
-	return web.EncodeJSON(w, responseError{Message: "id not found", StatusCode: http.StatusNotFound}, http.StatusNotFound)
+	http.Error(w, "id not found", http.StatusBadRequest)
 }
 
-func (h *handler) HelloHandler(w http.ResponseWriter, r *http.Request) error {
-	return web.EncodeJSON(w, fmt.Sprintf("%s, world!", r.URL.Path[1:]), http.StatusOK)
+func (h *handler) HelloHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "%s, world!", r.URL.Path[1:])
 }

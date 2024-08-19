@@ -9,12 +9,14 @@ import (
 )
 
 type itemServiceImpl struct {
-	repo ports.ItemRepository
+	repo           ports.ItemRepository
+	providerClient ports.ProviderClient
 }
 
-func NewService(repo ports.ItemRepository) ports.ItemService {
+func NewService(repo ports.ItemRepository, providerClient ports.ProviderClient) ports.ItemService {
 	return &itemServiceImpl{
-		repo: repo,
+		repo:           repo,
+		providerClient: providerClient,
 	}
 }
 
@@ -38,6 +40,11 @@ func (s *itemServiceImpl) AddItem(ctx context.Context, item domain.Item) (*domai
 	if item.Stock > 0 {
 		item.Available = true
 	}
+
+	// _, err := s.providerClient.GetProvider(item.ProviderID)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("provider not found")
+	// }
 
 	err := s.repo.AddItem(ctx, &item)
 	if err != nil {

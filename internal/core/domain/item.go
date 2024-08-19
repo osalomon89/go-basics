@@ -5,6 +5,7 @@ import "time"
 type Item struct {
 	ID          string     `json:"id,omitempty"`
 	Code        string     `json:"code"`
+	ProviderID  int        `json:"provider_id"`
 	Title       string     `json:"title"`
 	Description string     `json:"description"`
 	Price       float64    `json:"price"`

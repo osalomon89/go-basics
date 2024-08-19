@@ -86,7 +86,7 @@ func (r *elasticSearch) GetAllItems(ctx context.Context, limit int, searchAfter 
 	return items, result.Hits.Hits[len(result.Hits.Hits)-1].Sort, nil
 }
 
-func (r *elasticSearch) AddItem(ctx context.Context, item domain.Item) (*domain.Item, error) {
+func (r *elasticSearch) AddItem(ctx context.Context, item *domain.Item) error {
 	item.ID = ""
 	now := time.Now().UTC()
 	item.CreatedAt = &now
@@ -94,7 +94,7 @@ func (r *elasticSearch) AddItem(ctx context.Context, item domain.Item) (*domain.
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(item); err != nil {
-		return nil, fmt.Errorf("error encoding document: %s", err)
+		return fmt.Errorf("error encoding document: %s", err)
 	}
 
 	req := esapi.IndexRequest{
@@ -104,30 +104,30 @@ func (r *elasticSearch) AddItem(ctx context.Context, item domain.Item) (*domain.
 
 	res, err := req.Do(ctx, r.client)
 	if err != nil {
-		return nil, fmt.Errorf("insert: request: %w", err)
+		return fmt.Errorf("insert: request: %w", err)
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode == 409 {
-		return nil, errors.New("conflict")
+		return errors.New("conflict")
 	}
 
 	if res.IsError() {
-		return nil, fmt.Errorf("insert: response: %s", res.String())
+		return fmt.Errorf("insert: response: %s", res.String())
 	}
 
 	var resBody map[string]interface{}
 	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
-		return nil, fmt.Errorf("error parsing the response body: %s", err)
+		return fmt.Errorf("error parsing the response body: %s", err)
 	}
 
 	if id, ok := resBody["_id"].(string); ok {
 		item.ID = id
 	} else {
-		return nil, fmt.Errorf("error: no _id returned in response")
+		return fmt.Errorf("error: no _id returned in response")
 	}
 
-	return &item, nil
+	return nil
 }
 
 func (r *elasticSearch) Update(ctx context.Context, itemNew domain.Item) (*domain.Item, error) {

@@ -91,7 +91,7 @@ POST /items/_doc
   }
 }
 
-POST /items/_doc/3
+POST /items/_doc
 {
   "code": "SAM987",
   "title": "Tablet Samsung A54",
@@ -122,16 +122,17 @@ POST /items/_doc
 }
 
 # Modificar item completo
-POST /items/_doc/3
+PUT /items/_doc/1
 {
-  "title": "Tablet Samsung A54",
-  "description": "Tablet Android de última generación",
+  "title": "Laptop Samsung",
+  "description": "Portátil con pantalla de 17 pulgadas",
   "price": 699.99,
-  "available": true
+  "available": true,
+  "provider": null
 }
 
 # Modificacion parcial de item
-POST /items/_update/3
+POST /items/_update/1
 {
   "doc": {
     "price": 500.99
@@ -152,7 +153,7 @@ GET /items/_search
 {
   "query": {
     "term": {
-      "categories": "Informática"
+      "categories": "Telefonía"
     }
   }
 }
@@ -169,6 +170,7 @@ GET /items/_search
   }
 }
 
+# = in mysql
 GET /items/_search
 {
   "query": {
@@ -178,12 +180,24 @@ GET /items/_search
   }
 }
 
+# SELECT * FROM items WHERE code = "IPH234"
+GET /items/_search
+{
+  "query": {
+    "term": {
+      "code": "IPH234"
+    }
+  }
+}
 
+# LIKE in mysql
+# match: Encuentra documentos que contengan cualquier combinación de los términos.
+# SELECT * FROM items WHERE provider.name LIKE "%TechSupplier%"
 GET /items/_search
 {
   "query": {
     "match": {
-      "provider.name": "TechSupplier Inc."
+      "provider.name": "TechSupplier"
     }
   }
 }
@@ -198,11 +212,13 @@ GET /items/_search
   }
 }
 
+# LIKE similar
+# match_phrase: Encuentra documentos que contengan la frase exacta en el orden especificado.
 GET /items/_search
 {
   "query": {
     "match_phrase": {
-      "title": "laptop HP"
+      "title": "Tablet Samsung"
     }
   }
 }
@@ -226,11 +242,23 @@ GET /items/_search
   }
 }
 
+# query_string es una consulta poderosa que permite construir consultas complejas utilizando una sintaxis similar a SQL
 GET /items/_search
 {
   "query": {
     "query_string": {
       "query": "Laptop OR Samsung OR Android",
+      "fields": ["title", "description"]
+    }
+  }
+}
+
+# SELECT * FROM items WHERE (title LIKE '%Laptop%' OR description LIKE '%Laptop%') AND (title NOT LIKE '%Samsung%' AND description NOT LIKE '%Samsung%');
+GET /items/_search
+{
+  "query": {
+    "query_string": {
+      "query": "Laptop AND NOT Samsung",
       "fields": ["title", "description"]
     }
   }
@@ -256,7 +284,7 @@ GET /items/_search
   "query": {
     "bool": {
       "must": [
-        { "match": { "available": false } }
+        { "term": { "available": false } }
       ]
     }
   }
@@ -282,7 +310,7 @@ GET /items/_search
     "bool": {
       "filter": [
         { "match": { "description": "Android" } },
-        { "match": { "name": "Samsung A54" } }
+        { "match": { "title": "Samsung A54" } }
       ]
     }
   }
