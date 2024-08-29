@@ -5,13 +5,14 @@ import (
 	"time"
 
 	"github.com/osalomon89/go-basics/internal/core/domain"
+	"github.com/osalomon89/go-basics/internal/core/ports"
 )
 
 type providerClient struct {
 	httpClient *http.Client
 }
 
-func NewProviderClient() *providerClient {
+func NewProviderClient() ports.ProviderClient {
 	t := http.Transport{
 		IdleConnTimeout:     5 * time.Second,
 		MaxConnsPerHost:     100,
