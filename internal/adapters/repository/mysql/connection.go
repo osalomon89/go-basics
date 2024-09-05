@@ -11,7 +11,6 @@ import (
 
 const (
 	dbHost = "DB_HOST"
-	dbPort = "DB_PORT"
 	dbUser = "DB_USER"
 	dbPass = "DB_PASS"
 	dbName = "DB_NAME"
@@ -23,8 +22,10 @@ func GetConnectionDB() (*sqlx.DB, error) {
 	var err error
 
 	if db == nil {
-		db, err = sqlx.Connect("mysql", dbConnectionURL())
+		conn := dbConnectionURL()
+		db, err = sqlx.Connect("mysql", conn)
 		if err != nil {
+			fmt.Println(conn)
 			fmt.Printf("########## DB ERROR: " + err.Error() + " #############")
 			return nil, fmt.Errorf("### DB ERROR: %w", err)
 		}
@@ -70,5 +71,5 @@ func dbConnectionURL() string {
 		}
 	}
 
-	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True", os.Getenv(dbUser), os.Getenv(dbPass), os.Getenv(dbHost), os.Getenv(dbPort), os.Getenv(dbName))
+	return fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True", os.Getenv(dbUser), os.Getenv(dbPass), os.Getenv(dbHost), os.Getenv(dbName))
 }
